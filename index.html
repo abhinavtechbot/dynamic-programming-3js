@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dynamic Programming in 3D — Interactive Three.js &amp; WebGL Guide</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23060913'/><path d='M16 44L32 16L48 44Z' fill='none' stroke='%2322d3ee' stroke-width='5'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css?v=2" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container" aria-label="3D Dynamic Programming Visualization"></div>
+
+  <!-- Top Chapter Navigation Bar -->
+  <header id="top-bar">
+    <div class="brand">
+      <span class="brand-badge">WebGL + Three.js</span>
+      <h1>Dynamic Programming <span class="subtle">Step-by-Step</span></h1>
+    </div>
+    <nav id="chapter-tabs" aria-label="DP Learning Chapters">
+      <button class="chapter-tab active" data-chapter="0">
+        <span class="tab-num">01</span>
+        <span class="tab-label">Naive Recursion</span>
+      </button>
+      <button class="chapter-tab" data-chapter="1">
+        <span class="tab-num">02</span>
+        <span class="tab-label">Memoization</span>
+      </button>
+      <button class="chapter-tab" data-chapter="2">
+        <span class="tab-num">03</span>
+        <span class="tab-label">Tabulation</span>
+      </button>
+      <button class="chapter-tab" data-chapter="3">
+        <span class="tab-num">04</span>
+        <span class="tab-label">O(1) Space</span>
+      </button>
+      <button class="chapter-tab" data-chapter="4">
+        <span class="tab-num">05</span>
+        <span class="tab-label">2D Knapsack</span>
+      </button>
+      <button class="chapter-tab" data-chapter="5">
+        <span class="tab-num">06</span>
+        <span class="tab-label">Backtracking</span>
+      </button>
+    </nav>
+    <div class="header-actions">
+      <button id="btn-reset-cam" class="icon-btn" title="Reset 3D Camera (R)">Reset View</button>
+      <button id="btn-toggle-bloom" class="icon-btn active" title="Toggle WebGL Glow">Bloom: ON</button>
+    </div>
+  </header>
+
+  <!-- Left Pedagogical Panel (Desktop Sidebar / Mobile Bottom Sheet) -->
+  <aside id="left-panel" data-mobile-tab="step">
+    <div id="mobile-sheet-tabs" class="mobile-sheet-tabs" aria-label="Mobile Panel Switcher">
+      <button class="m-tab active" data-mtab="step">Step</button>
+      <button class="m-tab" data-mtab="code">Code</button>
+      <button class="m-tab" data-mtab="guide">Guide &amp; Params</button>
+      <button class="m-tab" data-mtab="hide">3D Only &#9662;</button>
+    </div>
+
+    <div class="panel-section chapter-overview">
+      <div class="eyebrow" id="chapter-eyebrow">CHAPTER 1 OF 6 &bull; OVERLAPPING SUBPROBLEMS</div>
+      <h2 id="chapter-title">The Trap of Naive Recursion</h2>
+      <p id="chapter-concept">
+        Dynamic Programming starts with recognizing <strong>overlapping subproblems</strong>. Watch how computing <code>fib(5)</code> recursively spawns an exponential tree that solves the exact same subproblems over and over.
+      </p>
+
+      <!-- Interactive Parameter Control -->
+      <div id="param-controls" class="param-row">
+        <label for="param-n" id="param-label">Target <code>n</code>:</label>
+        <input type="range" id="param-n" min="4" max="6" value="5" step="1" />
+        <span id="param-value" class="mono-pill">5</span>
+      </div>
+    </div>
+
+    <!-- Step-by-Step Live Explanation Card -->
+    <div class="panel-section step-card">
+      <div class="step-header">
+        <span class="step-badge" id="step-counter">Step 0 / 29</span>
+        <span class="step-tag" id="step-action-tag">READY</span>
+      </div>
+      <div id="step-formula" class="formula-box">Press <strong>Step &rarr;</strong> or <strong>Play</strong> to begin execution</div>
+      <p id="step-explanation" class="step-desc">
+        Drag in 3D space to orbit, scroll to zoom, or hover any 3D node to inspect its state and subproblem transitions.
+      </p>
+    </div>
+
+    <!-- Live Pseudocode Debugger -->
+    <div class="panel-section code-section">
+      <div class="section-title-row">
+        <span class="section-title">LIVE EXECUTION TRACE</span>
+        <span id="complexity-pill" class="complexity-badge">Time: O(2ⁿ) &bull; Space: O(n)</span>
+      </div>
+      <pre id="code-block" class="code-view" aria-live="polite"></pre>
+    </div>
+  </aside>
+
+  <!-- Right Floating HUD: Live Metrics & Color Legend -->
+  <aside id="right-hud">
+    <div class="hud-card metrics-card">
+      <div class="hud-title">LIVE METRICS</div>
+      <div class="metric-grid">
+        <div class="metric-item">
+          <span class="metric-label" id="m1-label">Total Ops / Calls</span>
+          <span class="metric-val" id="m1-val">0</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label" id="m2-label">Unique States</span>
+          <span class="metric-val emerald" id="m2-val">0</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label" id="m3-label">Wasted / Cache Hits</span>
+          <span class="metric-val accent" id="m3-val">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-card legend-card">
+      <div class="hud-title">3D STATE LEGEND</div>
+      <ul class="legend-list" id="legend-list">
+        <li><span class="dot cyan"></span> Active / Computing Now</li>
+        <li><span class="dot emerald"></span> Computed Subproblem</li>
+        <li><span class="dot rose"></span> Redundant Duplicate Work</li>
+        <li><span class="dot gold"></span> Cache Hit / Optimal Choice</li>
+        <li><span class="dot slate"></span> Unvisited / Evicted State</li>
+      </ul>
+      <div class="controls-hint">
+        <span><kbd>Space</kbd> Play/Pause</span>
+        <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Step</span>
+        <span><kbd>Drag</kbd> Orbit 3D</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Bottom Playback & Timeline Scrubber Bar -->
+  <footer id="bottom-bar">
+    <div class="transport-controls">
+      <button id="btn-first" class="ctrl-btn" title="Reset to Start (Home)" aria-label="First Step">&#9198;</button>
+      <button id="btn-prev" class="ctrl-btn" title="Step Backward (Left Arrow)" aria-label="Previous Step">&larr; Step</button>
+      <button id="btn-play" class="ctrl-btn primary" title="Play / Pause (Space)" aria-label="Play or Pause">&#9654; Play</button>
+      <button id="btn-next" class="ctrl-btn" title="Step Forward (Right Arrow)" aria-label="Next Step">Step &rarr;</button>
+      <button id="btn-last" class="ctrl-btn" title="Jump to Final Result (End)" aria-label="Last Step">&#9197;</button>
+    </div>
+
+    <div class="timeline-wrapper">
+      <input type="range" id="timeline-slider" min="0" max="10" value="0" step="1" aria-label="Execution Step Scrubber" />
+    </div>
+
+    <div class="speed-controls">
+      <label for="speed-slider">Speed</label>
+      <input type="range" id="speed-slider" min="0.4" max="3.0" value="1.2" step="0.2" />
+      <span id="speed-val" class="mono-pill">1.2x</span>
+      <button id="btn-next-chapter" class="next-chap-btn">Next Chapter &rarr;</button>
+    </div>
+  </footer>
+
+  <!-- 3D Raycast Hover Tooltip -->
+  <div id="hover-tooltip" class="tooltip hidden" role="tooltip"></div>
+
+  <script type="module" src="./js/main.js?v=2"></script>
+</body>
+</html>
