@@ -3,12 +3,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Dynamic Programming in 3D — Interactive Three.js &amp; WebGL Guide</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23060913'/><path d='M16 44L32 16L48 44Z' fill='none' stroke='%2322d3ee' stroke-width='5'/></svg>" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=2" />
+  <meta name="text-scale" content="scale" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    try {
+      const stored = localStorage.getItem('color-scheme');
+      if (stored === 'light' || stored === 'dark') {
+        document.querySelector('meta[name="color-scheme"]').content = stored;
+      }
+    } catch {}
+  </script>
+  <title>Dynamic Programming in 3D — Interactive Three.js &amp; WebGL Studio</title>
+  <meta name="description" content="Interactive 3D WebGL visual studio for learning Dynamic Programming step-by-step: naive recursion, memoization, tabulation, O(1) space, 2D knapsack, and backtracking." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23070a12'/><path d='M16 46L32 15L48 46Z' fill='none' stroke='%2322d3ee' stroke-width='4.5' stroke-linejoin='round'/><circle cx='32' cy='34' r='4.5' fill='%23fbbf24'/></svg>" />
+  <link rel="stylesheet" href="./styles.css?v=3" />
   <script type="importmap">
     {
       "imports": {
@@ -19,73 +27,123 @@
   </script>
 </head>
 <body>
-  <!-- 3D WebGL Canvas Container -->
-  <div id="canvas-container" aria-label="3D Dynamic Programming Visualization"></div>
+  <!-- 3D WebGL Canvas Stage -->
+  <main id="stage-shell" aria-label="Interactive 3D Dynamic Programming Stage">
+    <div id="canvas-container" role="img" aria-label="3D Dynamic Programming WebGL Visualization"></div>
+  </main>
 
-  <!-- Top Chapter Navigation Bar -->
+  <!-- Floating Glass Command Bar -->
   <header id="top-bar">
     <div class="brand">
-      <span class="brand-badge">WebGL + Three.js</span>
-      <h1>Dynamic Programming <span class="subtle">Step-by-Step</span></h1>
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22" fill="none" aria-hidden="true" focusable="false">
+          <path d="M6 24.5L16 5.5L26 24.5Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+          <path d="M11 24.5L16 15L21 24.5" stroke="var(--accent-gold)" stroke-width="1.8" stroke-linejoin="round" />
+          <circle cx="16" cy="15" r="2.2" fill="var(--accent-gold)" />
+        </svg>
+      </div>
+      <div class="brand-copy">
+        <h1>DP Studio <span class="subtle">3D</span></h1>
+        <span class="brand-badge">WebGL &middot; 6 Chapters</span>
+      </div>
     </div>
-    <nav id="chapter-tabs" aria-label="DP Learning Chapters">
-      <button class="chapter-tab active" data-chapter="0">
+
+    <nav id="chapter-tabs" aria-label="Dynamic Programming Chapters">
+      <button type="button" class="chapter-tab active" data-chapter="0" aria-current="step">
         <span class="tab-num">01</span>
         <span class="tab-label">Naive Recursion</span>
       </button>
-      <button class="chapter-tab" data-chapter="1">
+      <button type="button" class="chapter-tab" data-chapter="1">
         <span class="tab-num">02</span>
         <span class="tab-label">Memoization</span>
       </button>
-      <button class="chapter-tab" data-chapter="2">
+      <button type="button" class="chapter-tab" data-chapter="2">
         <span class="tab-num">03</span>
         <span class="tab-label">Tabulation</span>
       </button>
-      <button class="chapter-tab" data-chapter="3">
+      <button type="button" class="chapter-tab" data-chapter="3">
         <span class="tab-num">04</span>
         <span class="tab-label">O(1) Space</span>
       </button>
-      <button class="chapter-tab" data-chapter="4">
+      <button type="button" class="chapter-tab" data-chapter="4">
         <span class="tab-num">05</span>
         <span class="tab-label">2D Knapsack</span>
       </button>
-      <button class="chapter-tab" data-chapter="5">
+      <button type="button" class="chapter-tab" data-chapter="5">
         <span class="tab-num">06</span>
         <span class="tab-label">Backtracking</span>
       </button>
     </nav>
+
     <div class="header-actions">
-      <button id="btn-reset-cam" class="icon-btn" title="Reset 3D Camera (R)">Reset View</button>
-      <button id="btn-toggle-bloom" class="icon-btn active" title="Toggle WebGL Glow">Bloom: ON</button>
+      <button type="button" id="btn-theme-toggle" class="icon-btn theme-btn" title="Switch color theme">
+        <span class="theme-opt theme-opt-light">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <span class="sr-only">Switch to light theme</span>
+        </span>
+        <span class="theme-opt theme-opt-dark">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+          </svg>
+          <span class="sr-only">Switch to dark theme</span>
+        </span>
+      </button>
+
+      <button type="button" id="btn-toggle-bloom" class="icon-btn active" aria-pressed="true" title="Toggle WebGL Bloom Glow">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+        </svg>
+        <span class="btn-label" id="bloom-label">Bloom</span>
+      </button>
+
+      <button type="button" id="btn-reset-cam" class="icon-btn" title="Reset 3D Camera (R)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5" />
+        </svg>
+        <span class="btn-label">Reset</span>
+      </button>
+
+      <button type="button" id="btn-shortcuts" class="icon-btn" title="Keyboard Shortcuts (?)" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9.5 9.5a2.5 2.5 0 0 1 5 .8c0 1.7-2.5 2-2.5 3.7" />
+          <circle cx="12" cy="17.2" r="0.7" fill="currentColor" stroke="none" />
+        </svg>
+        <span class="sr-only">Keyboard shortcuts &amp; guide</span>
+      </button>
     </div>
   </header>
 
-  <!-- Left Pedagogical Panel (Desktop Sidebar / Mobile Bottom Sheet) -->
-  <aside id="left-panel" data-mobile-tab="step">
-    <div id="mobile-sheet-tabs" class="mobile-sheet-tabs" aria-label="Mobile Panel Switcher">
-      <button class="m-tab active" data-mtab="step">Step</button>
-      <button class="m-tab" data-mtab="code">Code</button>
-      <button class="m-tab" data-mtab="guide">Guide &amp; Params</button>
-      <button class="m-tab" data-mtab="hide">3D Only &#9662;</button>
+  <!-- Left Pedagogical Inspector (Desktop Sidebar / Mobile Bottom Sheet) -->
+  <aside id="left-panel" data-mobile-tab="step" aria-label="Algorithm Inspector">
+    <div id="mobile-sheet-tabs" class="mobile-sheet-tabs" role="tablist" aria-label="Inspector View Switcher">
+      <button type="button" class="m-tab active" data-mtab="step" role="tab" aria-selected="true">Step</button>
+      <button type="button" class="m-tab" data-mtab="code" role="tab" aria-selected="false">Code</button>
+      <button type="button" class="m-tab" data-mtab="guide" role="tab" aria-selected="false">Guide</button>
+      <button type="button" class="m-tab" data-mtab="hide" role="tab" aria-selected="false">3D Only &#9662;</button>
     </div>
 
-    <div class="panel-section chapter-overview">
+    <!-- Chapter Overview & Parameter Control -->
+    <section class="panel-section chapter-overview" aria-labelledby="chapter-title">
       <div class="eyebrow" id="chapter-eyebrow">CHAPTER 1 OF 6 &bull; OVERLAPPING SUBPROBLEMS</div>
       <h2 id="chapter-title">The Trap of Naive Recursion</h2>
       <p id="chapter-concept">
         Dynamic Programming starts with recognizing <strong>overlapping subproblems</strong>. Watch how computing <code>fib(5)</code> recursively spawns an exponential tree that solves the exact same subproblems over and over.
       </p>
 
-      <!-- Interactive Parameter Control -->
       <div id="param-controls" class="param-row">
         <label for="param-n" id="param-label">Target <code>n</code>:</label>
         <input type="range" id="param-n" min="4" max="6" value="5" step="1" />
         <span id="param-value" class="mono-pill">5</span>
       </div>
-    </div>
+    </section>
 
-    <!-- Step-by-Step Live Explanation Card -->
-    <div class="panel-section step-card">
+    <!-- Live Step Explanation Card -->
+    <section class="panel-section step-card" aria-live="polite" aria-label="Current Execution Step">
       <div class="step-header">
         <span class="step-badge" id="step-counter">Step 0 / 29</span>
         <span class="step-tag" id="step-action-tag">READY</span>
@@ -94,63 +152,71 @@
       <p id="step-explanation" class="step-desc">
         Drag in 3D space to orbit, scroll to zoom, or hover any 3D node to inspect its state and subproblem transitions.
       </p>
-    </div>
+    </section>
 
     <!-- Live Pseudocode Debugger -->
-    <div class="panel-section code-section">
+    <section class="panel-section code-section" aria-label="Live Execution Trace">
       <div class="section-title-row">
-        <span class="section-title">LIVE EXECUTION TRACE</span>
+        <span class="section-title">EXECUTION TRACE</span>
         <span id="complexity-pill" class="complexity-badge">Time: O(2ⁿ) &bull; Space: O(n)</span>
       </div>
       <pre id="code-block" class="code-view" aria-live="polite"></pre>
-    </div>
+    </section>
   </aside>
 
-  <!-- Right Floating HUD: Live Metrics & Color Legend -->
-  <aside id="right-hud">
-    <div class="hud-card metrics-card">
-      <div class="hud-title">LIVE METRICS</div>
+  <!-- Right Floating Telemetry HUD -->
+  <aside id="right-hud" aria-label="Live Telemetry and State Legend">
+    <section class="hud-card metrics-card">
+      <div class="hud-title">LIVE TELEMETRY</div>
       <div class="metric-grid">
-        <div class="metric-item">
-          <span class="metric-label" id="m1-label">Total Ops / Calls</span>
+        <div class="metric-item metric-cyan">
+          <span class="metric-label" id="m1-label">Total Calls</span>
           <span class="metric-val" id="m1-val">0</span>
         </div>
-        <div class="metric-item">
+        <div class="metric-item metric-emerald">
           <span class="metric-label" id="m2-label">Unique States</span>
           <span class="metric-val emerald" id="m2-val">0</span>
         </div>
-        <div class="metric-item">
-          <span class="metric-label" id="m3-label">Wasted / Cache Hits</span>
+        <div class="metric-item metric-accent">
+          <span class="metric-label" id="m3-label">Wasted Calls</span>
           <span class="metric-val accent" id="m3-val">0</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="hud-card legend-card">
+    <section class="hud-card legend-card">
       <div class="hud-title">3D STATE LEGEND</div>
       <ul class="legend-list" id="legend-list">
-        <li><span class="dot cyan"></span> Active / Computing Now</li>
-        <li><span class="dot emerald"></span> Computed Subproblem</li>
-        <li><span class="dot rose"></span> Redundant Duplicate Work</li>
-        <li><span class="dot gold"></span> Cache Hit / Optimal Choice</li>
-        <li><span class="dot slate"></span> Unvisited / Evicted State</li>
+        <li><span class="legend-chip cyan" aria-hidden="true">&#9679;</span><span>Active / Computing</span></li>
+        <li><span class="legend-chip emerald" aria-hidden="true">&#10003;</span><span>Computed State</span></li>
+        <li><span class="legend-chip rose" aria-hidden="true">&times;</span><span>Redundant Work</span></li>
+        <li><span class="legend-chip gold" aria-hidden="true">&#9733;</span><span>Cache Hit / Optimal</span></li>
+        <li><span class="legend-chip slate" aria-hidden="true">&#9675;</span><span>Unvisited / Evicted</span></li>
       </ul>
       <div class="controls-hint">
-        <span><kbd>Space</kbd> Play/Pause</span>
-        <span><kbd>&larr;</kbd> <kbd>&rarr;</kbd> Step</span>
-        <span><kbd>Drag</kbd> Orbit 3D</span>
+        <span><kbd>Space</kbd> Play</span>
+        <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> Step</span>
+        <span><kbd>1</kbd>–<kbd>6</kbd> Chapter</span>
       </div>
-    </div>
+    </section>
   </aside>
 
-  <!-- Bottom Playback & Timeline Scrubber Bar -->
+  <!-- Floating Bottom Playback & Scrubber Dock -->
   <footer id="bottom-bar">
     <div class="transport-controls">
-      <button id="btn-first" class="ctrl-btn" title="Reset to Start (Home)" aria-label="First Step">&#9198;</button>
-      <button id="btn-prev" class="ctrl-btn" title="Step Backward (Left Arrow)" aria-label="Previous Step">&larr; Step</button>
-      <button id="btn-play" class="ctrl-btn primary" title="Play / Pause (Space)" aria-label="Play or Pause">&#9654; Play</button>
-      <button id="btn-next" class="ctrl-btn" title="Step Forward (Right Arrow)" aria-label="Next Step">Step &rarr;</button>
-      <button id="btn-last" class="ctrl-btn" title="Jump to Final Result (End)" aria-label="Last Step">&#9197;</button>
+      <button type="button" id="btn-first" class="ctrl-btn ctrl-icon" title="Reset to Start (Home)" aria-label="First Step">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M6 5v14M18 6l-8 6 8 6V6Z" />
+        </svg>
+      </button>
+      <button type="button" id="btn-prev" class="ctrl-btn" title="Step Backward (Left Arrow)" aria-label="Previous Step">&larr; Step</button>
+      <button type="button" id="btn-play" class="ctrl-btn primary" title="Play / Pause (Space)" aria-label="Play or Pause">&#9654; Play</button>
+      <button type="button" id="btn-next" class="ctrl-btn" title="Step Forward (Right Arrow)" aria-label="Next Step">Step &rarr;</button>
+      <button type="button" id="btn-last" class="ctrl-btn ctrl-icon" title="Jump to Final Result (End)" aria-label="Last Step">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M18 5v14M6 6l8 6-8 6V6Z" />
+        </svg>
+      </button>
     </div>
 
     <div class="timeline-wrapper">
@@ -159,15 +225,40 @@
 
     <div class="speed-controls">
       <label for="speed-slider">Speed</label>
-      <input type="range" id="speed-slider" min="0.4" max="3.0" value="1.2" step="0.2" />
+      <input type="range" id="speed-slider" min="0.4" max="3.0" value="1.2" step="0.2" aria-label="Playback Speed" />
       <span id="speed-val" class="mono-pill">1.2x</span>
-      <button id="btn-next-chapter" class="next-chap-btn">Next Chapter &rarr;</button>
+      <button type="button" id="btn-next-chapter" class="next-chap-btn">Chapter 2 &rarr;</button>
     </div>
   </footer>
 
   <!-- 3D Raycast Hover Tooltip -->
   <div id="hover-tooltip" class="tooltip hidden" role="tooltip"></div>
 
-  <script type="module" src="./js/main.js?v=2"></script>
+  <!-- Native Top-Layer Keyboard Shortcuts & Navigation Dialog -->
+  <dialog id="shortcuts-dialog" class="studio-dialog" aria-labelledby="shortcuts-title">
+    <div class="dialog-header">
+      <div>
+        <div class="eyebrow">DP STUDIO 3D &bull; CONTROLS</div>
+        <h2 id="shortcuts-title">Navigation &amp; Shortcuts</h2>
+      </div>
+      <button type="button" id="btn-close-shortcuts" class="icon-btn" aria-label="Close shortcuts dialog">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false">
+          <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <dl class="shortcut-grid">
+        <div class="shortcut-row"><dt><kbd>Space</kbd></dt><dd>Play / Pause step animation</dd></div>
+        <div class="shortcut-row"><dt><kbd>&larr;</kbd> / <kbd>&rarr;</kbd></dt><dd>Step backward or forward</dd></div>
+        <div class="shortcut-row"><dt><kbd>Home</kbd> / <kbd>End</kbd></dt><dd>Jump to start or final state</dd></div>
+        <div class="shortcut-row"><dt><kbd>1</kbd> – <kbd>6</kbd></dt><dd>Switch learning chapter</dd></div>
+        <div class="shortcut-row"><dt><kbd>R</kbd></dt><dd>Reset 3D camera orbit</dd></div>
+        <div class="shortcut-row"><dt><kbd>Drag</kbd> / <kbd>Scroll</kbd></dt><dd>Orbit and zoom 3D scene</dd></div>
+      </dl>
+    </div>
+  </dialog>
+
+  <script type="module" src="./js/main.js?v=3"></script>
 </body>
 </html>

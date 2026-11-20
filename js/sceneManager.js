@@ -208,6 +208,26 @@ export class SceneManager {
     this.onResize();
   }
 
+  setTheme(mode) {
+    const isLight = mode === 'light';
+    const bgHex = isLight ? 0xeef2f9 : 0x070a12;
+    this.scene.background.setHex(bgHex);
+    this.scene.fog.color.setHex(bgHex);
+    this.scene.fog.density = isLight ? 0.015 : 0.022;
+    if (this.groundMat?.uniforms?.uIsLight) {
+      this.groundMat.uniforms.uIsLight.value = isLight ? 1.0 : 0.0;
+    }
+    if (this.particles?.material) {
+      this.particles.material.color.setHex(isLight ? 0x64748b : 0x60a5fa);
+      this.particles.material.opacity = isLight ? 0.32 : 0.45;
+    }
+    if (this.bloomPass) {
+      this.bloomPass.strength = isLight ? 0.14 : 0.48;
+      this.bloomPass.threshold = isLight ? 0.86 : 0.68;
+    }
+    this.renderer.toneMappingExposure = isLight ? 1.02 : 1.08;
+  }
+
   onResize() {
     const w = window.innerWidth;
     const h = window.innerHeight;

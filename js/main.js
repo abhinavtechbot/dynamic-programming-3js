@@ -1,5 +1,5 @@
-import { CHAPTERS, buildChapterTrace } from './dpEngine.js?v=2';
-import { SceneManager } from './sceneManager.js?v=2';
+import { CHAPTERS, buildChapterTrace } from './dpEngine.js?v=3';
+import { SceneManager } from './sceneManager.js?v=3';
 
 const dom = {
   canvasContainer: document.getElementById('canvas-container'),
@@ -36,6 +36,12 @@ const dom = {
   btnNextChapter: document.getElementById('btn-next-chapter'),
   btnResetCam: document.getElementById('btn-reset-cam'),
   btnToggleBloom: document.getElementById('btn-toggle-bloom'),
+  bloomLabel: document.getElementById('bloom-label'),
+  btnThemeToggle: document.getElementById('btn-theme-toggle'),
+  btnShortcuts: document.getElementById('btn-shortcuts'),
+  shortcutsDialog: document.getElementById('shortcuts-dialog'),
+  btnCloseShortcuts: document.getElementById('btn-close-shortcuts'),
+  colorSchemeMeta: document.querySelector('meta[name="color-scheme"]'),
 };
 
 const state = {
@@ -50,6 +56,72 @@ const state = {
 
 const sceneMgr = new SceneManager(dom.canvasContainer, dom.tooltip);
 
+/* ============================================================================
+ * COLOR SCHEME MANAGEMENT (Two-state toggle per modern-web-guidance)
+ * ============================================================================ */
+const darkMedia = window.matchMedia('(prefers-color-scheme: dark)');
+
+function getStoredScheme() {
+  try {
+    const val = localStorage.getItem('color-scheme');
+    return val === 'light' || val === 'dark' ? val : null;
+  } catch {
+    return null;
+  }
+}
+
+function getSystemScheme() {
+  return darkMedia.matches ? 'dark' : 'light';
+}
+
+function getRenderedScheme() {
+  return getStoredScheme() ?? getSystemScheme();
+}
+
+function syncThemeToPageAndScene() {
+  const stored = getStoredScheme();
+  if (dom.colorSchemeMeta) {
+    dom.colorSchemeMeta.content = stored ?? 'light dark';
+  }
+  sceneMgr.setTheme(getRenderedScheme());
+}
+
+function toggleColorScheme() {
+  const target = getRenderedScheme() === 'dark' ? 'light' : 'dark';
+  const system = getSystemScheme();
+  try {
+    if (target === system) {
+      localStorage.removeItem('color-scheme');
+    } else {
+      localStorage.setItem('color-scheme', target);
+    }
+  } catch {
+    if (dom.colorSchemeMeta) {
+      dom.colorSchemeMeta.content = target;
+    }
+    sceneMgr.setTheme(target);
+    return;
+  }
+  syncThemeToPageAndScene();
+}
+
+darkMedia.addEventListener('change', () => {
+  if (!getStoredScheme()) {
+    sceneMgr.setTheme(getSystemScheme());
+  }
+});
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'color-scheme') {
+    syncThemeToPageAndScene();
+  }
+});
+
+syncThemeToPageAndScene();
+
+/* ============================================================================
+ * EXECUTION TRACE RENDERING
+ * ============================================================================ */
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -71,16 +143,16 @@ function loadChapter(idx, customParam = null) {
   const chap = CHAPTERS[idx];
   state.paramVal = customParam !== null ? customParam : chap.paramDefault;
 
-  // Update active tab & auto-scroll pill into view on mobile
   dom.tabs.forEach((btn, i) => {
     const isAct = i === idx;
     btn.classList.toggle('active', isAct);
+    if (isAct) btn.setAttribute('aria-current', 'step');
+    else btn.removeAttribute('aria-current');
     if (isAct && window.innerWidth <= 768) {
       btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   });
 
-  // Update left overview & parameter slider
   dom.eyebrow.textContent = chap.eyebrow;
   dom.title.textContent = chap.title;
   dom.concept.innerHTML = chap.concept;
@@ -99,7 +171,6 @@ function loadChapter(idx, customParam = null) {
   dom.btnNextChapter.textContent =
     idx < CHAPTERS.length - 1 ? `Chapter ${idx + 2} →` : 'Restart Ch. 1 ↺';
 
-  // Generate step trace & build 3D scene
   state.trace = buildChapterTrace(idx, state.paramVal);
   sceneMgr.loadTrace(state.trace);
 
@@ -117,7 +188,16 @@ function goToStep(stepIdx) {
 
   dom.timeline.value = state.stepIdx;
   dom.stepCounter.textContent = `Step ${state.stepIdx} / ${maxStep}`;
-  dom.stepTag.textContent = step.tag;
+
+  const tagPrefix =
+    step.tagType === 'cache'
+      ? '★ '
+      : step.tagType === 'redundant'
+        ? '× '
+        : step.tagType === 'done'
+          ? '✓ '
+          : '● ';
+  dom.stepTag.textContent = `${tagPrefix}${step.tag}`;
   dom.stepTag.className = 'step-tag';
   if (step.tagType === 'cache') dom.stepTag.classList.add('tag-cache');
   else if (step.tagType === 'redundant') dom.stepTag.classList.add('tag-redundant');
@@ -186,7 +266,11 @@ dom.mobileTabs.forEach((btn) => {
   btn.addEventListener('click', () => {
     const mtab = btn.dataset.mtab;
     dom.leftPanel.dataset.mobileTab = mtab;
-    dom.mobileTabs.forEach((b) => b.classList.toggle('active', b === btn));
+    dom.mobileTabs.forEach((b) => {
+      const active = b === btn;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', String(active));
+    });
     sceneMgr.setMobileSheetCollapsed(mtab === 'hide');
   });
 });
@@ -243,12 +327,35 @@ dom.btnResetCam.addEventListener('click', () => {
 
 dom.btnToggleBloom.addEventListener('click', () => {
   const on = sceneMgr.toggleBloom();
-  dom.btnToggleBloom.textContent = `Bloom: ${on ? 'ON' : 'OFF'}`;
   dom.btnToggleBloom.classList.toggle('active', on);
+  dom.btnToggleBloom.setAttribute('aria-pressed', String(on));
+  if (dom.bloomLabel) {
+    dom.bloomLabel.textContent = on ? 'Bloom' : 'Bloom Off';
+  }
+});
+
+dom.btnThemeToggle.addEventListener('click', toggleColorScheme);
+
+dom.btnShortcuts.addEventListener('click', () => {
+  if (!dom.shortcutsDialog.open) {
+    dom.shortcutsDialog.showModal();
+  }
+});
+
+dom.btnCloseShortcuts.addEventListener('click', () => {
+  dom.shortcutsDialog.close();
+});
+
+dom.shortcutsDialog.addEventListener('click', (e) => {
+  if (e.target === dom.shortcutsDialog) {
+    dom.shortcutsDialog.close();
+  }
 });
 
 window.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
+  if (dom.shortcutsDialog.open) return;
+
   if (e.code === 'Space') {
     e.preventDefault();
     if (state.isPlaying) stopPlayback();
@@ -269,6 +376,8 @@ window.addEventListener('keydown', (e) => {
     goToStep(state.trace.steps.length - 1);
   } else if (e.key === 'r' || e.key === 'R') {
     sceneMgr.resetCamera();
+  } else if (e.key === '?') {
+    dom.shortcutsDialog.showModal();
   } else if (e.key >= '1' && e.key <= '6') {
     loadChapter(parseInt(e.key, 10) - 1);
   }

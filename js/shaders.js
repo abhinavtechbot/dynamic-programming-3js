@@ -12,6 +12,7 @@ export function createGroundFieldMaterial() {
       uActivePos: { value: new THREE.Vector3(0, 0, 0) },
       uActiveStrength: { value: 0.0 },
       uActiveColor: { value: new THREE.Color(0x22d3ee) },
+      uIsLight: { value: 0.0 },
     },
     vertexShader: /* glsl */ `
       varying vec3 vWorldPos;
@@ -26,6 +27,7 @@ export function createGroundFieldMaterial() {
       uniform vec3 uActivePos;
       uniform float uActiveStrength;
       uniform vec3 uActiveColor;
+      uniform float uIsLight;
       varying vec3 vWorldPos;
 
       void main() {
@@ -49,8 +51,11 @@ export function createGroundFieldMaterial() {
         float ring = smoothstep(5.5, 0.0, distActive) * wave * uActiveStrength;
         float coreSpot = smoothstep(2.4, 0.0, distActive) * uActiveStrength;
 
-        vec3 baseCol = vec3(0.10, 0.18, 0.34) * minorGrid * 0.45
-                     + vec3(0.18, 0.36, 0.62) * majorLine * 0.65;
+        vec3 darkBase = vec3(0.10, 0.18, 0.34) * minorGrid * 0.45
+                      + vec3(0.18, 0.36, 0.62) * majorLine * 0.65;
+        vec3 lightBase = vec3(0.55, 0.62, 0.74) * minorGrid * 0.40
+                       + vec3(0.32, 0.42, 0.58) * majorLine * 0.58;
+        vec3 baseCol = mix(darkBase, lightBase, uIsLight);
         vec3 rippleCol = uActiveColor * (ring * 0.55 + coreSpot * 0.45);
 
         vec3 finalCol = baseCol + rippleCol;
